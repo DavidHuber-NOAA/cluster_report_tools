@@ -8,20 +8,20 @@ hostname = (platform.node())
 if "Orion" not in hostname:
    stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
 else:
-   stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
+   stream = os.popen('saccount_params -l -a nesdis-rdo1,nesdis-rdo2,dras-aida')
 
 output = stream.readlines()
 lines = [line.strip() for line in output]
 
 projectInfo=[]
 for line in lines:
-   if "Project" in line:
+   if "Project:" in line:
       project=line.split(": ")[1]
-   if "FairShare" in line:
+   if "fairshare=" in line.lower():
       (fairShareInfo,allocInfo) = line.split("\t")
       fairShare = re.split('=| ', fairShareInfo)[1]
       (allocUsed, allocGiven) = re.split('=|, ', allocInfo)[1:4:2]
-   if "Directory" in line:
+   if "Directory:" in line:
       (dmy, folder, dmy3, usage, unit, dmy5, quota, dmy6, dmy7, files, dmy8, fileQuota)=re.split(' |, |=', line)
       if unit=="KB" or unit=="MB":
          usage = "0"
