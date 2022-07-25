@@ -8,7 +8,7 @@ hostname = (platform.node())
 if "Orion" not in hostname:
    stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
 else:
-   stream = os.popen('saccount_params -l -a nesdis-rdo1,nesdis-rdo2,dras-aida')
+   stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
 
 output = stream.readlines()
 lines = [line.strip() for line in output]
