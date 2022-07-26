@@ -30,8 +30,18 @@ for line in lines:
 
       quota = '{0:.1f}'.format(float(quota) / 1000.0)
 
+      #If on orion, determine the directory clearly
+      if "Orion" in hostname:
+         if "work2" in folder:
+            folder = "/work2 "
+         else:
+            folder = "/work "
+      else:
+         #For other machines, we have only one allocation per project
+         folder = ""
+
       projectInfo.append((project, 'fs: ' + fairShare, 'alloc: ' + allocUsed + '/' + allocGiven,
-         'usage: ' + folder + ' ' + usage + '/' + quota))
+         'usage: ' + folder + usage + '/' + quota))
 
 print("Project information on " + hostname + ":")
 for proj in projectInfo:
