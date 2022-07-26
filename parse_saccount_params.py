@@ -31,7 +31,7 @@ for line in lines:
       quota = '{0:.1f}'.format(float(quota) / 1000.0)
 
       projectInfo.append((project, 'fs: ' + fairShare, 'alloc: ' + allocUsed + '/' + allocGiven,
-         'usage: ' + folder + ' ' + usage + '/' + quota, 'files: ' + files + '/' + fileQuota))
+         'usage: ' + folder + ' ' + usage + '/' + quota))
 
 print("Project information on " + hostname + ":")
 for proj in projectInfo:
