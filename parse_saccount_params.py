@@ -7,18 +7,16 @@ import datetime as dt
 
 hostname = (platform.node())
 #Run jobs to calculate usage statistics
-start_sacct = (dt.date.today() + dt.timedelta(days=-7)).strftime("%m%d%y")
+start_sacct = (dt.date.today() + dt.timedelta(days=-30)).strftime("%m%d%y")
+sacct_cmd = "sacct -X -a -o Reserved -S " + start_sacct + " -A "
+accounts = ["nesdis-rdo1", "nesdis-rdo2"]
 if "Orion" not in hostname:
    sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
-   sa_rdo1_stream = os.popen('sacct -X -A nesdis-rdo1 -o Reserved -S ' + start_sacct)
-   sa_rdo2_stream = os.popen('sacct -X -A nesdis-rdo2 -o Reserved -S ' + start_sacct)
-   sa_streams = (sa_rdo1_stream, sa_rdo2_stream)
 else:
    sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
-   sa_rdo1_stream = os.popen('sacct -X -A nesdis-rdo1 -o Reserved -S ' + start_sacct)
-   sa_rdo2_stream = os.popen('sacct -X -A nesdis-rdo2 -o Reserved -S ' + start_sacct)
-   sa_aida_stream = os.popen('sacct -X -A dras-aida -o Reserved -S ' + start_sacct)
-   sa_streams = (sa_rdo1_stream, sa_rdo2_stream, sa_aida_stream)
+   accounts.append("dras-aida")
+
+sa_streams = [os.popen(sacct_cmd + account) for account in accounts]
 
 #Average the wait times for each project
 #Calculate wait times in hours
@@ -32,9 +30,9 @@ for stream in sa_streams:
    n = len(output)
    for line in output:
       if "-" in line:
-         wait_time = line.split("-")[0]
-         wait_time.append(line.split("-")[1].split(":"))
-         hours += float(wait_time[0])*24.0 + float(wait_time[0]) + float(wait_time[1])/60.0 + float(wait_time[2])/3600.0
+         wait_time = [line.split("-")[0]]
+         wait_time.extend(line.split("-")[1].split(":"))
+         hours += float(wait_time[0])*24.0 + float(wait_time[1]) + float(wait_time[2])/60.0 + float(wait_time[3])/3600.0
       else:
          wait_time = line.split(":")
          hours += float(wait_time[0]) + float(wait_time[1])/60.0 + float(wait_time[2])/3600.0
