@@ -3,20 +3,61 @@
 import os
 import platform
 import re
+import datetime as dt
 
 hostname = (platform.node())
+#Run jobs to calculate usage statistics
+start_sacct = (dt.date.today() + dt.timedelta(days=-7)).strftime("%m%d%y")
 if "Orion" not in hostname:
-   stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
+   sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
+   sa_rdo1_stream = os.popen('sacct -X -A nesdis-rdo1 -o Reserved -S ' + start_sacct)
+   sa_rdo2_stream = os.popen('sacct -X -A nesdis-rdo2 -o Reserved -S ' + start_sacct)
+   sa_streams = (sa_rdo1_stream, sa_rdo2_stream)
 else:
-   stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
+   sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
+   sa_rdo1_stream = os.popen('sacct -X -A nesdis-rdo1 -o Reserved -S ' + start_sacct)
+   sa_rdo2_stream = os.popen('sacct -X -A nesdis-rdo2 -o Reserved -S ' + start_sacct)
+   sa_aida_stream = os.popen('sacct -X -A dras-aida -o Reserved -S ' + start_sacct)
+   sa_streams = (sa_rdo1_stream, sa_rdo2_stream, sa_aida_stream)
 
-output = stream.readlines()
+#Average the wait times for each project
+#Calculate wait times in hours
+m = len(sa_streams)
+project_wait = []
+for stream in sa_streams:
+   hours = 0.0
+   output = stream.readlines()
+   #Trim the first two lines
+   output = output[2:]
+   n = len(output)
+   for line in output:
+      if "-" in line:
+         wait_time = line.split("-")[0]
+         wait_time.append(line.split("-")[1].split(":"))
+         hours += float(wait_time[0])*24.0 + float(wait_time[0]) + float(wait_time[1])/60.0 + float(wait_time[2])/3600.0
+      else:
+         wait_time = line.split(":")
+         hours += float(wait_time[0]) + float(wait_time[1])/60.0 + float(wait_time[2])/3600.0
+
+   if(n != 0):
+      project_wait.append('{0:.4f}'.format(hours / float(n)))
+   else:
+      project_wait.append("N/A")
+
+output = sap_stream.readlines()
 lines = [line.strip() for line in output]
 
 projectInfo=[]
+#Parse the output of saccount_params and also calculate the mean queue time for each project
 for line in lines:
    if "Project:" in line:
       project=line.split(": ")[1]
+      if project == "nesdis-rdo1":
+         wait = project_wait[0]
+      elif project == "nesdis-rdo2":
+         wait = project_wait[1]
+      elif project == "dras-aida":
+         wait = project_wait[2]
    if "fairshare=" in line.lower():
       (fairShareInfo,allocInfo) = line.split("\t")
       fairShare = re.split('=| ', fairShareInfo)[1]
@@ -33,15 +74,16 @@ for line in lines:
       #If on orion, determine the directory clearly
       if "Orion" in hostname:
          if "work2" in folder:
-            folder = "/work2 "
+            folder = "work2 "
          else:
-            folder = "/work "
+            folder = "work "
       else:
          #For other machines, we have only one allocation per project
          folder = ""
 
       projectInfo.append((project, 'fs: ' + fairShare, 'alloc: ' + allocUsed + '/' + allocGiven,
-         'usage: ' + folder + usage + '/' + quota))
+         'usage: ' + folder + usage + '/' + quota, "Queue: " + wait))
+
 
 print("Project information on " + hostname + ":")
 for proj in projectInfo:
