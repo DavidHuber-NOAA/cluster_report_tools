@@ -5,24 +5,9 @@ import platform
 import re
 import datetime as dt
 
-hostname = (platform.node())
-#Run jobs to calculate usage statistics
-start_sacct = (dt.date.today() + dt.timedelta(days=-30)).strftime("%m%d%y")
-sacct_cmd = "sacct -X -a -o Reserved -S " + start_sacct + " -A "
-accounts = ["nesdis-rdo1", "nesdis-rdo2"]
-if "Orion" not in hostname:
-   sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
-else:
-   sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
-   accounts.append("dras-aida")
-
-sa_streams = [os.popen(sacct_cmd + account) for account in accounts]
-
-#Average the wait times for each project
-#Calculate wait times in hours
-m = len(sa_streams)
-project_wait = []
-for stream in sa_streams:
+def get_wait_time(stream):
+   #Average the wait times for each project
+   #Calculate wait times in hours
    hours = 0.0
    output = stream.readlines()
    #Trim the first two lines
@@ -38,9 +23,38 @@ for stream in sa_streams:
          hours += float(wait_time[0]) + float(wait_time[1])/60.0 + float(wait_time[2])/3600.0
 
    if(n != 0):
-      project_wait.append('{0:.4f}'.format(hours / float(n)))
+      return ('{0:.4f}'.format(hours / float(n)))
    else:
-      project_wait.append("N/A")
+      return "N/A"
+
+
+hostname = (platform.node())
+#Run jobs to calculate usage statistics
+start_sacct = (dt.date.today() + dt.timedelta(days=-30)).strftime("%m%d%y")
+sacct_cmd = "sacct -X -a -o Reserved -S " + start_sacct + " -A "
+accounts = ["nesdis-rdo1", "nesdis-rdo2"]
+if "Orion" not in hostname:
+   sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2')
+else:
+   sap_stream = os.popen('saccount_params -L -a nesdis-rdo1,nesdis-rdo2,dras-aida')
+   accounts.append("dras-aida")
+
+sa_batch_streams = [os.popen(sacct_cmd + account + " -q batch") for account in accounts]
+sa_wind_streams = [os.popen(sacct_cmd + account + " -q windfall") for account in accounts]
+sa_all_streams = [os.popen(sacct_cmd + account) for account in accounts]
+
+project_wait = []
+batch_wait = []
+wind_wait = []
+
+for stream in sa_all_streams:
+   project_wait.append(get_wait_time(stream))
+
+for stream in sa_batch_streams:
+   batch_wait.append(get_wait_time(stream))
+
+for stream in sa_wind_streams:
+   wind_wait.append(get_wait_time(stream))
 
 output = sap_stream.readlines()
 lines = [line.strip() for line in output]
@@ -51,11 +65,16 @@ for line in lines:
    if "Project:" in line:
       project=line.split(": ")[1]
       if project == "nesdis-rdo1":
-         wait = project_wait[0]
+         ndx = 0
       elif project == "nesdis-rdo2":
-         wait = project_wait[1]
+         ndx = 1
       elif project == "dras-aida":
-         wait = project_wait[2]
+         ndx = 2
+
+      wait = project_wait[ndx]
+      windq = wind_wait[ndx]
+      batchq = batch_wait[ndx]
+
    if "fairshare=" in line.lower():
       (fairShareInfo,allocInfo) = line.split("\t")
       fairShare = re.split('=| ', fairShareInfo)[1]
@@ -80,7 +99,8 @@ for line in lines:
          folder = ""
 
       projectInfo.append((project, 'fs: ' + fairShare, 'alloc: ' + allocUsed + '/' + allocGiven,
-         'usage: ' + folder + usage + '/' + quota, "Queue: " + wait))
+         'usage: ' + folder + usage + '/' + quota, "Wait (all/batch/windfall) " + wait +
+         "/" + batchq + "/" + windq))
 
 
 print("Project information on " + hostname + ":")
