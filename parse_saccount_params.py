@@ -27,6 +27,14 @@ def get_wait_time(stream):
    else:
       return "N/A"
 
+def GetWindfallTime(account,start):
+   windfall_cmd = "sacct -a -X -q windfall -o 'CPUTimeRAW' -A " + account + " -S " + start
+   stream = os.popen(windfall_cmd)
+   hours = 0.0
+   for line in stream.readlines()[2:]:
+      hours += float(line) / 3600.0
+
+   return hours
 
 hostname = (platform.node())
 #Run jobs to calculate usage statistics
@@ -42,6 +50,9 @@ else:
 sa_batch_streams = [os.popen(sacct_cmd + account + " -q batch") for account in accounts]
 sa_wind_streams = [os.popen(sacct_cmd + account + " -q windfall") for account in accounts]
 sa_all_streams = [os.popen(sacct_cmd + account) for account in accounts]
+
+print(GetWindfallTime("nesdis-rdo1",start_sacct))
+wind_hours = [GetWindfallTime(account,start_sacct) for account in accounts]
 
 project_wait = []
 batch_wait = []
@@ -74,6 +85,7 @@ for line in lines:
       wait = project_wait[ndx]
       windq = wind_wait[ndx]
       batchq = batch_wait[ndx]
+      wind_use = wind_hours[ndx]
 
    if "fairshare=" in line.lower():
       (fairShareInfo,allocInfo) = line.split("\t")
@@ -100,7 +112,7 @@ for line in lines:
 
       projectInfo.append((project, 'fs: ' + fairShare, 'alloc: ' + allocUsed + '/' + allocGiven,
          'usage: ' + folder + usage + '/' + quota, "Wait (all/batch/windfall) " + wait +
-         "/" + batchq + "/" + windq))
+         "/" + batchq + "/" + windq, "Windfall: ", wind_use))
 
 
 print("Project information on " + hostname + ":")
