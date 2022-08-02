@@ -51,7 +51,6 @@ sa_batch_streams = [os.popen(sacct_cmd + account + " -q batch") for account in a
 sa_wind_streams = [os.popen(sacct_cmd + account + " -q windfall") for account in accounts]
 sa_all_streams = [os.popen(sacct_cmd + account) for account in accounts]
 
-print(GetWindfallTime("nesdis-rdo1",start_sacct))
 wind_hours = [GetWindfallTime(account,start_sacct) for account in accounts]
 
 project_wait = []
@@ -82,10 +81,10 @@ for line in lines:
       elif project == "dras-aida":
          ndx = 2
 
-      wait = project_wait[ndx]
-      windq = wind_wait[ndx]
-      batchq = batch_wait[ndx]
-      wind_use = wind_hours[ndx]
+      wait = '{0:.1f}'.format(float(project_wait[ndx]))
+      windq = '{0:.1f}'.format(float(wind_wait[ndx]))
+      batchq = '{0:.1f}'.format(float(batch_wait[ndx]))
+      wind_use = '{0:.1f}'.format(float(wind_hours[ndx]))
 
    if "fairshare=" in line.lower():
       (fairShareInfo,allocInfo) = line.split("\t")
@@ -103,18 +102,22 @@ for line in lines:
       #If on orion, determine the directory clearly
       if "Orion" in hostname:
          if "work2" in folder:
-            folder = "work2 "
+            folder = "/work2:"
          else:
-            folder = "work "
+            folder = "/work:"
       else:
          #For other machines, we have only one allocation per project
          folder = ""
 
-      projectInfo.append((project, 'fs: ' + fairShare, 'alloc: ' + allocUsed + '/' + allocGiven,
-         'usage: ' + folder + usage + '/' + quota, "Wait (all/batch/windfall) " + wait +
-         "/" + batchq + "/" + windq, "Windfall: ", wind_use))
+      projectInfo.append((project + ',' + fairShare + ',' + allocUsed + '/' + allocGiven +
+         ',' + folder + usage + '/' + quota + "," + wait +
+         "/" + batchq + "/" + windq + "," + wind_use))
 
 
 print("Project information on " + hostname + ":")
-for proj in projectInfo:
-   print(proj)
+with open("Orion_usage.csv", "w") as f:
+   print("Project,FairShare,CoreHours(Used/Allocated),DiskUsage(Used/Allocated),MeanQueueTime(All/Batch/Windfall),WindfallCoreHours")
+   f.write("Project,FairShare,CoreHours(Used/Allocated),DiskUsage(Used/Allocated),MeanQueueTime(All/Batch/Windfall),WindfallCoreHours\n")
+   for proj in projectInfo:
+      print(proj)
+      f.write(proj + "\n")
