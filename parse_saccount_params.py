@@ -81,10 +81,10 @@ for line in lines:
       elif project == "dras-aida":
          ndx = 2
 
-      wait = '{0:.2f}'.format(float(project_wait[ndx]))
-      windq = '{0:.2f}'.format(float(wind_wait[ndx]))
-      batchq = '{0:.2f}'.format(float(batch_wait[ndx]))
-      wind_use = '{0:.1f}'.format(float(wind_hours[ndx]))
+      wait = project_wait[ndx] if project_wait[ndx] == "N/A" else '{0:.2f}'.format(float(project_wait[ndx]))
+      windq = wind_wait[ndx] if wind_wait[ndx] == "N/A" else '{0:.2f}'.format(float(wind_wait[ndx]))
+      batchq = batch_wait[ndx] if batch_wait[ndx] == "N/A" else '{0:.2f}'.format(float(batch_wait[ndx]))
+      wind_use = wind_hours[ndx] if wind_hours[ndx] == "N/A" else '{0:.2f}'.format(float(wind_hours[ndx]))
 
    if "fairshare=" in line.lower():
       (fairShareInfo,allocInfo) = line.split("\t")
