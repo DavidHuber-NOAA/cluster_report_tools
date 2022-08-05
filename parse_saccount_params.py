@@ -81,9 +81,9 @@ for line in lines:
       elif project == "dras-aida":
          ndx = 2
 
-      wait = '{0:.1f}'.format(float(project_wait[ndx]))
-      windq = '{0:.1f}'.format(float(wind_wait[ndx]))
-      batchq = '{0:.1f}'.format(float(batch_wait[ndx]))
+      wait = '{0:.2f}'.format(float(project_wait[ndx]))
+      windq = '{0:.2f}'.format(float(wind_wait[ndx]))
+      batchq = '{0:.2f}'.format(float(batch_wait[ndx]))
       wind_use = '{0:.1f}'.format(float(wind_hours[ndx]))
 
    if "fairshare=" in line.lower():
@@ -109,15 +109,16 @@ for line in lines:
          #For other machines, we have only one allocation per project
          folder = ""
 
-      projectInfo.append((project + ',' + fairShare + ',' + allocUsed + '/' + allocGiven +
-         ',' + folder + usage + '/' + quota + "," + wait +
-         "/" + batchq + "/" + windq + "," + wind_use))
+      projectInfo.append((project + ',' + fairShare + ',' + allocUsed + ',' + allocGiven +
+         ',' + folder + usage + ',' + quota + "," + wait +
+         "," + batchq + "," + windq + "," + wind_use))
 
 
 print("Project information on " + hostname + ":")
 with open("Orion_usage.csv", "w") as f:
-   print("Project,FairShare,CoreHours(Used/Allocated),DiskUsage(Used/Allocated),MeanQueueTime(All/Batch/Windfall),WindfallCoreHours")
-   f.write("Project,FairShare,CoreHours(Used/Allocated),DiskUsage(Used/Allocated),MeanQueueTime(All/Batch/Windfall),WindfallCoreHours\n")
+   header = "Project,FairShare,CoreHoursUsed,Allocated,DiskUsageUsed,Allocated,MeanQueueTimeAll,Batch,Windfall,WindfallCoreHours"
+   print(header)
+   f.write(header + "\n")
    for proj in projectInfo:
       print(proj)
       f.write(proj + "\n")
