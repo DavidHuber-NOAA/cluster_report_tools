@@ -18,7 +18,9 @@ def get_wait_time(stream):
          wait_time = [line.split("-")[0]]
          wait_time.extend(line.split("-")[1].split(":"))
          hours += float(wait_time[0])*24.0 + float(wait_time[1]) + float(wait_time[2])/60.0 + float(wait_time[3])/3600.0
+      elif not (":" in line): continue
       else:
+         if("INVALID" in line): continue
          wait_time = line.split(":")
          hours += float(wait_time[0]) + float(wait_time[1])/60.0 + float(wait_time[2])/3600.0
 
@@ -81,7 +83,7 @@ for line in lines:
       elif project == "dras-aida":
          ndx = 2
 
-      wait = project_wait[ndx] if project_wait[ndx] == "N/A" else '{0:.2f}'.format(float(project_wait[ndx]))
+      allq = project_wait[ndx] if project_wait[ndx] == "N/A" else '{0:.2f}'.format(float(project_wait[ndx]))
       windq = wind_wait[ndx] if wind_wait[ndx] == "N/A" else '{0:.2f}'.format(float(wind_wait[ndx]))
       batchq = batch_wait[ndx] if batch_wait[ndx] == "N/A" else '{0:.2f}'.format(float(batch_wait[ndx]))
       wind_use = wind_hours[ndx] if wind_hours[ndx] == "N/A" else '{0:.1f}'.format(float(wind_hours[ndx]))
@@ -110,7 +112,7 @@ for line in lines:
          folder = ""
 
       projectInfo.append((project + ',' + fairShare + ',' + allocUsed + ',' + allocGiven +
-         ',' + folder + usage + ',' + quota + "," + wait +
+         ',' + folder + usage + ',' + quota + "," + allq +
          "," + batchq + "," + windq + "," + wind_use))
 
 
